@@ -12,7 +12,6 @@ let items = ["Book Reading - 30 Min.",];
 let workItems = [];
 
 app.get("/", function (req, res) {
- 
 
   let formattedDay = date.getDate();
   console.log(formattedDay);
@@ -39,7 +38,7 @@ app.post("/", function (req, res) {
     items.push(item);
   }
   else {
-    for(let i = req.body.button; i < items.length; i++){
+    for(let i = req.body.button; i < items.length-1; i++){
       items[i] = items[i+1];
     }
     items.pop();
