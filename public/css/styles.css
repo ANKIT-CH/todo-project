@@ -37,6 +37,18 @@ h1 {
   border-bottom: 0;
 }
 
+.addButton{
+    min-height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    border-color: transparent;
+    background-color: #a683e3;
+    color: #fff;
+    font-size: 30px;
+    padding-bottom: 6px;
+    border-width: 0;
+}
+
 input:checked + p {
   text-decoration: line-through;
   text-decoration-color: #a683e3;
@@ -62,13 +74,13 @@ form {
 }
 
 button {
-  min-height: 50px;
-  width: 50px;
-  border-radius: 50%;
+  /* min-height: 20px;
+  width: 20px; */
+  /* border-radius: 50%; */
   border-color: transparent;
-  background-color: #a683e3;
-  color: #fff;
-  font-size: 30px;
+  background-color: #ffffff;
+  color: rgb(255, 0, 0);
+  font-size: 40px;
   padding-bottom: 6px;
   border-width: 0;
 }
