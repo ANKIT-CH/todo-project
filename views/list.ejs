@@ -1,9 +1,20 @@
 <%- include("header") -%>
 
-  <body>
-    <div class="box" id="heading">
-      <h1><%= listTitle %></h1>
+<body>
+  <div class="box" id="heading">
+    <h1><%= listTitle %></h1>
+  </div>
+
+  <div class="box">
+    <!-- <% for(var i = 0; i < allItems.length; i++){%>
+    <div class="item">
+      <input type="checkbox" />
+      <p><%= allItems[i] %></p>
+      <form class="item" action="/" method="post">
+        <button type="submit" name="button" value=<%=allItems[i]%></button>
+      </form>
     </div>
+    <%}%> -->
 
     <div class="box">
 
@@ -40,6 +51,28 @@
         <button type="submit" name="list" value=<%= listTitle%>>+</button>
       </form>
     </div>
+    <%}%>
 
-    <%- include("footer") -%>
+    <form class="item" action="/" method="post">
+      <input
+        type="text"
+        name="newItem"
+        placeholder="New Item"
+        autocomplete="off"
+      />
+      <input
+        type="time"
+        name="newItemTime"
+        placeholder="08:00"
+        autocomplete="off"
+      />
 
+      <!-- <button type="submit" name="button" value=<%=listTitle%>>+</button> -->
+      <button class="addButton" type="submit" name="button" value="allItems">
+        +
+      </button>
+    </form>
+  </div>
+
+  <%- include("footer") -%>
+</body>

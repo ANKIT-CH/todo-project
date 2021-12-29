@@ -154,6 +154,7 @@ app.post("/delete", function (req, res) {
       }
     );
   }
+  res.redirect("/");
 });
 
 // app.post("/markDone", function (req, res) {
