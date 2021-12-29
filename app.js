@@ -3,7 +3,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const date = require(__dirname + "/date.js");
+const _ = require("lodash");
+// const { redirect } = require("express/lib/response");
 
 const app = express();
 
@@ -14,111 +15,196 @@ app.use(express.static("public"));
 
 mongoose.connect("mongodb://localhost:27017/ankitTodoDB");
 
-const itemschema = {
+const itemSchema = {
   todoName: String,
   isDone: Boolean,
 };
+const ItemModel = mongoose.model("todoItems", itemSchema);
 
-const ItemModel = mongoose.model("todoItems", itemschema);
+const item1 = new ItemModel({ todoName: "Default Item", isDone: false });
 
-const item1 = new ItemModel({ todoName: "Book Reading", isDone: false });
-const item2 = new ItemModel({ todoName: "Coding", isDone: false });
-const item3 = new ItemModel({ todoName: "Lectures", isDone: false });
+// const defaultItems = [item1];
 
-const defaultItems = [item1, item2, item3];
-// ItemModel.insertMany(defaultItems, function(err){
-//   if(err)
-//   console.log("error occurred while inserting todo items" + err);
-//   else
-//   console.log("todo items inserted successfully" );
-
-// });
-
-const workItems = [];
+const ListSchema = {
+  name: String,
+  todoItems: [itemSchema],
+};
+const ListModel = mongoose.model("Lists", ListSchema);
 
 app.get("/", function (req, res) {
-  const day = date.getDate();
-
-  ItemModel.find({}, function (err, dbItems) {
-    if (dbItems.length === 0) {
-      ItemModel.insertMany(defaultItems, function (err) {
-        if (err) console.log("error occurred while inserting todo items" + err);
-        else console.log("todo items inserted successfully");
-      });
-      res.redirect("/");
-    } else {
-      res.render("list", { listTitle: day, allItems: dbItems });
+  let customListName = "today";
+  ListModel.findOne({ name: customListName }, function (err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        console.log("list doesn't exist");
+        const list = new ListModel({
+          name: customListName,
+          todoItems: [],
+        });
+        list.save();
+        res.redirect("/");
+      } else {
+        console.log("List already exist");
+        res.render("list", {
+          listTitle: _.capitalize(customListName),
+          allItems: foundList.todoItems,
+        });
+      }
     }
   });
+
+  // ItemModel.find({}, function (err, dbItems) {
+  //   res.render("list", {
+  //     listTitle: _.capitalize("TODAY"),
+  //     allItems: dbItems,
+  //   });
+  // });
 });
 
 app.post("/", function (req, res) {
   const item = req.body.newItem;
+  const listName = req.body.list.toLowerCase();
 
-  const newItem = new ItemModel({ todoName: item });
+  const newItem = new ItemModel({ todoName: item, isDone: false });
   newItem.save();
-
-  // if (req.body.list == "Work") {
-  //   workItems.push(item);
-  //   res.redirect("/work");
-  // } else {
-  //   items.push(item);
+  // if (listName == "today") {
   //   res.redirect("/");
+  // } else {
+  ListModel.findOne({ name: listName }, function (err, foundList) {
+    if (!err) {
+      foundList.todoItems.push(newItem);
+      foundList.save();
+    } else {
+      console.log("error in adding item in" + listName);
+    }
+    res.redirect("/" + listName);
+  });
   // }
-
-  res.redirect("/");
 });
 
 app.post("/delete", function (req, res) {
   const removeItemId = req.body.itemId;
+  const listName = req.body.list.toLowerCase();
 
-  ItemModel.findByIdAndRemove(removeItemId, function (err) {
-    if (err) {
-      console.log("error occurred in deleting item" + err);
-    } else {
-      console.log("Deleted item successfully");
-      // res.redirect("/");
+  ListModel.findOne({ name: "done" }, function (err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        const list = new ListModel({
+          name: "done",
+          todoItems: [],
+        });
+        list.save();
+      }
     }
   });
-  res.redirect("/");
+
+  if (listName === "done") {
+    ListModel.findOneAndUpdate(
+      { name: listName },
+      { $pull: { todoItems: { _id: removeItemId } } },
+      function (err, foundList) {
+        if (!err) {
+          ItemModel.findByIdAndRemove(removeItemId, function (err) {
+            if (err) {
+              console.log("error occurred in deleting item" + err);
+            } else {
+              console.log("Deleted item successfully");
+              // res.redirect("/");
+            }
+          });
+
+          res.redirect("/" + listName);
+        } else {
+          res.redirect("/" + listName);
+        }
+      }
+    );
+  } else {
+    let item = new ItemModel({ name: "default item", isDone: true });
+
+    ItemModel.findById(removeItemId, function (err, foundItem) {
+      if (err) {
+        console.log("error occurred in accessing item" + err);
+      } else {
+        item = foundItem;
+      }
+    });
+
+    ListModel.findOneAndUpdate(
+      { name: listName },
+      { $pull: { todoItems: { _id: removeItemId } } },
+      function (err, foundList) {
+        if (!err) {
+          item.isDone = true;
+          if (!err) {
+            ListModel.findOne({ name: "done" }, function (err, foundList) {
+              if (!err) {
+                foundList.todoItems.push(item);
+                foundList.save();
+              } else {
+                console.log("error in adding item in done list");
+              }
+            });
+          }
+
+          res.redirect("/" + listName);
+        } else {
+          res.redirect("/" + listName);
+        }
+      }
+    );
+  }
 });
 
 // app.post("/markDone", function (req, res) {
-//   console.log(req.body);
 //   const itemId = req.body.itemId;
-//   let val = false;
-//   ItemModel.findById(itemId, function (err, item) {
-//     if (err)
-//       console.log("Error occurred while checking and unchecking an item" + err);
-//     else {
-//       val = item.isDone;
-//       if (val === true) {
-//         ItemModel.findByIdAndUpdate(itemId, { isDone: false }, function (err) {
-//           if (err) {
-//             console.log("error occurred in Updating item" + err);
-//           } else {
-//             console.log("Updated item successfully");
-//             // res.redirect("/");
-//           }
-//         });
+//   const listName = req.body.list;
+
+//   ListModel.findOneAndUpdate(
+//     { name: listName, todoItems: { $elemMatch: { _id: removeItemId } } },
+//     { $set: { "todoItems.$.isDone": !(todoItems.$.isDone) } },
+//     function (err, foundList) {
+//       if (!err) {
+//         res.redirect("/" + listName);
 //       } else {
-//         ItemModel.findByIdAndUpdate(itemId, { isDone: true }, function (err) {
-//           if (err) {
-//             console.log("error occurred in Updating item" + err);
-//           } else {
-//             console.log("Updated item successfully");
-//             // res.redirect("/");
-//           }
-//         });
+//         res.redirect("/" + listName);
 //       }
 //     }
-//   });
-
-//   res.redirect("/");
+//   );
+//   res.redirect("/" + listName);
 // });
 
+app.get("/:customListName", function (req, res) {
+  const customListName = req.params.customListName.toLowerCase();
+  if (customListName == "today") res.redirect("/");
+
+  ListModel.findOne({ name: customListName }, function (err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        console.log("list doesn't exist");
+        const list = new ListModel({
+          name: customListName,
+          todoItems: [],
+        });
+        list.save();
+        res.redirect("/" + customListName);
+      } else {
+        console.log("List already exist");
+        if (customListName == "today") res.redirect("/");
+        else {
+          res.render("list", {
+            listTitle: _.capitalize(customListName),
+            allItems: foundList.todoItems,
+          });
+        }
+      }
+    }
+  });
+  // res.redirect("/");
+});
+
 app.get("/work", function (req, res) {
-  res.render("list", { listTitle: "Work List", allItems: workItems });
+  res.render("list", { listTitle: _.capitalize("work"), allItems: workItems });
 });
 
 app.get("/about", function (req, res) {
