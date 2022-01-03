@@ -13,7 +13,10 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/ankitTodoDB");
+// mongoose.connect("mongodb://localhost:27017/ankitTodoDB");
+mongoose.connect(
+  "mongodb+srv://admin-addmin:<PASSWORD>@cluster0.zosun.mongodb.net/ankitTodoDB"
+);
 
 const itemSchema = {
   todoName: String,
